@@ -1,37 +1,55 @@
 /**
-  simple stack based VM
+simple stack based VM
 **/
 
 #include <stdio.h>
 #include <stdbool.h>
 
 bool running = true;
-int ip = 0;
-int sp = -1;
+
+typedef enum {
+    // GENERAL PURPOSE
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    //INSTRUCTION POINTER
+    IP,
+    // STACK POINTER
+    SP,
+    REGISTER_SIZE
+} Registers;
+
+static int registers[REGISTER_SIZE];
+
+#define SP (registers[SP])
+#define IP (registers[IP])
 
 int stack[256];
 
 typedef enum {
-  HLT,
-  PSH,
-  POP,
-  ADD,
+    HLT,
+    PSH,
+    POP,
+    ADD,
 } InstructionSet;
 
 const int program[] = {
-  PSH, 5,
-  PSH, 2,
-  ADD,
-  PSH, 10,
-  PSH, 12,
-  ADD,
-  ADD,
-  POP,
-  HLT
+    PSH, 5,
+    PSH, 2,
+    ADD,
+    PSH, 10,
+    PSH, 12,
+    ADD,
+    ADD,
+    POP,
+    HLT
 };
 
 int fetch() {
-    return program[ip];
+    return program[IP];
 }
 
 void eval(int instr) {
@@ -42,29 +60,30 @@ void eval(int instr) {
             break;
         }
         case PSH: {
-          printf("push %d\n", program[ip+1]);
-          stack[++sp] = program[++ip];
-          break;
+            printf("push %d\n", program[IP+1]);
+            stack[++SP] = program[++IP];
+            break;
         }
         case POP: {
-          int val_popped = stack[sp--];
-          printf("popped %d\n", val_popped);
-          break;
-      }
-      case ADD: {
-          int a = stack[sp--];
-          int b = stack[sp--];
-          printf("add %d %d\n", a, b);
-          int result = b + a;
-          stack[++sp] = result;
-          break;
-      }
+            printf("popped %d\n", stack[SP]);
+            SP = SP -1;
+            break;
+        }
+        case ADD: {
+            registers[A] = stack[SP--];
+            registers[B] = stack[SP--];
+            registers[C] = registers[B] + registers[A];
+            printf("add %d %d = %d\n", registers[A], registers[B], registers[C]);
+            stack[++SP] = registers[C];
+            break;
+        }
     }
 }
 
 int main() {
+    SP = -1;
     while (running) {
         eval(fetch());
-        ip++;
+        IP++;
     }
 }
