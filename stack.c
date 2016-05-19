@@ -23,6 +23,7 @@ typedef enum {
 } Registers;
 
 static int registers[REGISTER_SIZE];
+// bool is_jmp = false;
 
 #define SP (registers[SP])
 #define IP (registers[IP])
@@ -39,18 +40,20 @@ typedef enum {
     SUB, // 6 -- sub :: subtracts top two vals on stack
     MOV, // 7 -- mov reg_a, reg_b :: movs the value in reg_a to reg_b
     SET, // 8 -- set reg, val :: sets the reg to value
+    IF,  // 9 - if reg val ip :: if the register == val branch to the ip
+    IFN, // 10 - ifn reg val ip :: if the register != val branch to the ip
+    GLD, // 11 -- gld reg :: loads a register to the stack
+    GPT, // 12 -- gpt reg :: pushes top of stack to the given register
     NOP,
 } InstructionSet;
 
 const int instructions[] = {
-    PSH, 5,
-    PSH, 2,
-    ADD,
-    PSH, 10,
-    PSH, 12,
-    ADD,
-    ADD,
-    POP,
+    SET, A, 21,     // 3
+    GLD, A,         // 5
+    PSH, 1,         // 7
+    SUB,            // 8
+    GPT, A,         // 10
+    IFN, A, 0, 2,        // 14
     HLT
 };
 
@@ -120,6 +123,42 @@ void eval(int instr) {
             printf("set %d\n", stack[SP]);
             registers[instructions[IP + 1]] = instructions[IP + 2];
             IP = IP + 2;
+            break;
+        }
+        case IF: {
+            printf("IF\n");
+            printf("%d\n", registers[instructions[IP + 1]]);
+            printf("%d\n", registers[instructions[IP + 2]]);
+            if (registers[instructions[IP + 1]] == instructions[IP + 2]) {
+                IP = instructions[IP + 3];
+                // is_jmp = true;
+            }
+            else{
+                IP = IP + 3;
+            }
+            break;
+        }
+        case IFN: {
+            printf("IFN\n");
+            if (registers[instructions[IP + 1]] != instructions[IP + 2]) {
+                IP = instructions[IP + 3];
+            }
+            else {
+                IP = IP + 3;
+            }
+            break;
+        }
+        case GLD: {
+            printf("GLD\n");
+            SP = SP + 1;
+            IP = IP + 1;
+            stack[SP] = registers[instructions[IP]];
+            break;
+        }
+        case GPT: {
+            printf("GPT\n");
+            registers[instructions[IP + 1]] = stack[SP];
+            IP = IP + 1;
             break;
         }
         case NOP: {
